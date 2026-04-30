@@ -75,11 +75,9 @@ python manual_control.py --rows 3 --cols 3 --perturbation progressive --severity
 | Проверить устойчивость к помехам | `--perturbation naive_dr --severity 0.7` |
 | Тестировать на разных размерах | `--rows 2 --cols 2` → `--rows 7 --cols 7` |
 
----
 
-Скачать этот кусок отдельно: [README_manual_control.md](sandbox:///mnt/agents/output/README_manual_control.md)
 
-Если нужно — вставлю этот блок в полный README.md и пересохраню.
+
 
 
 ## 📦 Команды для запуска с чекпоинта (быстрый справочник)
