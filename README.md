@@ -1,5 +1,3 @@
-# rl_visual_robustnes
-
 "Повышение устойчивости навигационных RL-агентов к визуальным помехам"
 
 # QR-DQN + Curriculum Learning для MiniWorld Maze
