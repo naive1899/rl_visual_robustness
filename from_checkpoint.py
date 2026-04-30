@@ -9,6 +9,7 @@ import os
 from sb3_contrib import QRDQN
 from train import create_vec_env, MAZE_CURRICULUM, LevelMetricsCallback, CurriculumSuccessCallback
 
+
 # Ваш путь:
 BASE_MODELS_DIR = r"C:\Users\ПК\Desktop\QR_DQN\models"
 # ------------------------------------------------
@@ -70,6 +71,10 @@ def continue_from_checkpoint(
         print(f"   Целевой Success Rate: {target_sr}% (окно {window_size})")
         print(f"{'='*60}")
 
+        # Смена шага оптимизатора после чекпоинта
+        for pg in model.policy.optimizer.param_groups:
+            pg['lr'] = 1e-4
+
         # Создаём среду для этого уровня
         env = create_vec_env(
             'maze', num_envs, seed, config, 
@@ -94,6 +99,13 @@ def continue_from_checkpoint(
             verbose=1
         )
 
+        # Сброс exploration на начало
+        from stable_baselines3.common.utils import get_linear_fn
+        model.exploration_schedule = get_linear_fn(
+            start=1.0,            # exploration_initial_eps
+            end=0.15,             # exploration_final_eps
+            end_fraction=0.65      # exploration_fraction 
+        )
         # Обучение
         model.learn(
             total_timesteps=max_steps,
@@ -103,7 +115,7 @@ def continue_from_checkpoint(
             progress_bar=True,
             log_interval=200
         )
-
+        
         # Сохраняем финальную модель уровня
         level_path = os.path.join(model_dir, f"level_{label}_final")
         model.save(level_path)
@@ -127,7 +139,7 @@ if __name__ == "__main__":
     parser.add_argument('--level', type=int, required=True,
                         help='Индекс уровня, с которого начинаем (1=3x3, 2=4x4). Чекпоинт возьмётся от предыдущего.')
     parser.add_argument('--config', type=str, default='baseline',
-                        choices=['baseline', 'progressive_dr'])
+                        choices=['baseline', 'progressive_dr', 'ray_cast'])
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--num-envs', type=int, default=8)
     args = parser.parse_args()
