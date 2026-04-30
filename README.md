@@ -2,7 +2,54 @@
 
 "Повышение устойчивости навигационных RL-агентов к визуальным помехам"
 
-  
+QR-DQN + Curriculum Learning для MiniWorld Maze
+Проект обучения робастных навигационных агентов в лабиринтах MiniWorld с использованием QR-DQN (Quantile Regression DQN). Решается задача повышения устойчивости RL-агентов к визуальным помехам и доменной рандомизации через curriculum learning, reward shaping и обучение с domain randomisation.
+
+## Конфигураций обучения и оценки
+
+### 1. Таблица конфигураций обучения
+| Модель | `perturbation_mode` | `severity` | `enable_domain_rand` |
+|--------|---------------------|------------|----------------------|
+| `baseline` | `"none"` | 0.0 | `False` |
+| `progressive_dr` | `"progressive"` | 0.6 | `True` |
+| `ray_cast` | `"progressive"` | 0.6 | `True` |
+
+### 2. Таблица режимов оценки
+| Режим | `perturbation_mode` | `severity` | `enable_domain_rand` |
+|-------|---------------------|------------|----------------------|
+| `clean` | `"none"` | 0.0 | `False` |
+| `light_dr` | `"none"` | 0.0 | `True` |
+| `sensor_stress` | `"fixed"` | 0.6 | `False` |
+| `total_chaos` | `"naive"` | 0.6 | `True` |
+
+### 3. Полная матрица оценки: 3 модели × 4 режима = **12 команд**
+
+**baseline:**
+```bash
+python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --mode clean --episodes 100
+python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --mode light_dr --episodes 100
+python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --mode sensor_stress --episodes 100
+python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --mode total_chaos --episodes 100
+```
+
+**progressive_dr:**
+```bash
+python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model --mode clean --episodes 100
+python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model --mode light_dr --episodes 100
+python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model --mode sensor_stress --episodes 100
+python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model --mode total_chaos --episodes 100
+```
+
+**ray_cast:**
+```bash
+python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --mode clean --episodes 100
+python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --mode light_dr --episodes 100
+python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --mode sensor_stress --episodes 100
+python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --mode total_chaos --episodes 100
+```
+
+
+
 
 ## 🎮 Ручное управление
 
@@ -183,49 +230,5 @@ models/maze_curriculum_baseline_seed_0/
 
   
 
-## Конфигураций обучения и оценки
-
-### 1. Таблица конфигураций обучения
-| Модель | `perturbation_mode` | `severity` | `enable_domain_rand` |
-|--------|---------------------|------------|----------------------|
-| `baseline` | `"none"` | 0.0 | `False` |
-| `progressive_dr` | `"progressive"` | 0.6 | `True` |
-| `ray_cast` | `"progressive"` | 0.6 | `True` |
-
-### 2. Таблица режимов оценки
-| Режим | `perturbation_mode` | `severity` | `enable_domain_rand` |
-|-------|---------------------|------------|----------------------|
-| `clean` | `"none"` | 0.0 | `False` |
-| `light_dr` | `"none"` | 0.0 | `True` |
-| `sensor_stress` | `"fixed"` | 0.6 | `False` |
-| `total_chaos` | `"naive"` | 0.6 | `True` |
-
-### 3. Полная матрица оценки: 3 модели × 4 режима = **12 команд**
-
-**baseline:**
-```bash
-python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --mode clean --episodes 100
-python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --mode light_dr --episodes 100
-python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --mode sensor_stress --episodes 100
-python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --mode total_chaos --episodes 100
-```
-
-**progressive_dr:**
-```bash
-python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model --mode clean --episodes 100
-python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model --mode light_dr --episodes 100
-python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model --mode sensor_stress --episodes 100
-python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model --mode total_chaos --episodes 100
-```
-
-**ray_cast:**
-```bash
-python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --mode clean --episodes 100
-python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --mode light_dr --episodes 100
-python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --mode sensor_stress --episodes 100
-python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --mode total_chaos --episodes 100
-```
-
----
 
 
