@@ -98,7 +98,7 @@ def continue_from_checkpoint(
             name_prefix=f"qrdqn_{label}",
             verbose=1
         )
-
+        model.num_timesteps = 0  # Обнуляем шаги  (критически важно)
         # Сброс exploration на начало
         from stable_baselines3.common.utils import get_linear_fn
         model.exploration_schedule = get_linear_fn(
