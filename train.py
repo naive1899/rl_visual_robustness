@@ -253,7 +253,7 @@ def make_env(env_name, rank, seed, config,  grid_size=None, max_episode_steps=No
         # Dilated Frame Stack (только изображение)
         if use_dilated_stack:
             env = DilatedFrameStack(env, n_stack=n_stack, dilation=dilation)
-            print(f"   🌀 DilatedFrameStack: {n_stack} кадров (шаг {dilation})")
+            print(f" DilatedFrameStack: {n_stack} кадров (шаг {dilation})")
 
         # MultiModalObservationWrapper - добавляет вектор и формирует Dict
         env = MultiModalObservationWrapper(env)
@@ -261,7 +261,7 @@ def make_env(env_name, rank, seed, config,  grid_size=None, max_episode_steps=No
         # Ray Casting если конфиг ray_cast
         if config == "ray_cast":
             env = RayCastingWrapper(env, num_rays=8, max_dist=10.0, fov=75.0)
-            print(f"   🔦 RayCastingWrapper: 8 лучей, FOV=75°, max_dist=10")
+            print(f"  RayCastingWrapper: 8 лучей, FOV=75°, max_dist=10")
 
         log_dir = f"models/{env_name}_{config}_seed_{seed}/logs"
         os.makedirs(log_dir, exist_ok=True)
@@ -280,7 +280,7 @@ def create_vec_env(env_name, num_envs, seed, config, grid_size=None, max_episode
     так как наблюдение уже словарь и политика MultiInputPolicy его обрабатывает.
     """
     label = f" grid={grid_size}" if grid_size else ""
-    print(f"\n🌍 Создание среды: {env_name}{label} ({num_envs} параллельных)")
+    print(f"\n Создание среды: {env_name}{label} ({num_envs} параллельных)")
 
     env_fns = [
         make_env(env_name, i, seed, config, grid_size=grid_size, max_episode_steps=max_episode_steps,  
