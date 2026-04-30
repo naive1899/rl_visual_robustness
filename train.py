@@ -168,7 +168,7 @@ MAZE_CURRICULUM = [
         'grid_size': (4, 5),
         'max_timesteps': 5_000_000,    
         'max_episode_steps': 550,
-        'label': '5x5',
+        'label': '4x5',
         'target_success_rate': 95.0,
         'window_size': 200,
     },
