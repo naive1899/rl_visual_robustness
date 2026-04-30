@@ -2,7 +2,84 @@
 
 "Повышение устойчивости навигационных RL-агентов к визуальным помехам"
 
+  
 
+## 🎮 Ручное управление
+
+Интерактивный режим для отладки, визуализации reward shaping и тестирования визуальных помех.
+
+### Ключи запуска
+
+| Ключ | Значение по умолчанию | Описание |
+|------|----------------------|----------|
+| `--rows` | `4` | Количество рядов комнат (высота лабиринта) |
+| `--cols` | `4` | Количество колонок комнат (ширина лабиринта) |
+| `--domain-rand` | `False` | Включить доменную рандомизацию (разные текстуры, цвета) |
+| `--perturbation` | `"none"` | Тип визуальных искажений: `none`, `naive_dr`, `progressive` |
+| `--severity` | `0.5` | Начальная степень искажений (0.0 — нет, 1.0 — максимум) |
+
+### Примеры команд
+
+```bash
+# ─── Базовое управление ─────────────────────────────────────────────
+# Лабиринт 2×2 (самый простой, для проверки)
+python manual_control.py --rows 2 --cols 2
+
+# Лабиринт 4×4 (стандартный)
+python manual_control.py --rows 4 --cols 4
+
+# Лабиринт 5×5 с доменной рандомизацией
+python manual_control.py --rows 5 --cols 5 --domain-rand
+
+# Лабиринт 5×4 (прямоугольный)
+python manual_control.py --rows 5 --cols 4 --domain-rand
+
+# Большой лабиринт 7×7
+python manual_control.py --rows 7 --cols 7
+
+
+# ─── С визуальными помехами ─────────────────────────────────────────
+# Naive DR: случайная severity каждый эпизод
+python manual_control.py --rows 4 --cols 4 --perturbation naive_dr --severity 0.7
+
+# Naive DR + доменная рандомизация
+python manual_control.py --rows 5 --cols 5 --perturbation naive_dr --severity 0.6 --domain-rand
+
+# Progressive: тяжесть растёт от 0 до severity квадратично
+python manual_control.py --rows 3 --cols 3 --perturbation progressive --severity 0.3
+```
+
+### Управление в окне
+
+| Клавиша | Действие |
+|---------|----------|
+| `W` | Движение вперёд |
+| `S` | Движение назад |
+| `A` | Поворот влево |
+| `D` | Поворот вправо |
+| `R` | Сброс эпизода |
+| `Q` / `Esc` | Выход |
+| `+` / `-` | Увеличить / уменьшить severity помех (если активны) |
+
+### Что отображается
+
+- **Левое окно (pygame)** — панель информации: episode, step, grid size, total reward, original/shaped/PBRS награды, spin penalty, perturbation severity, top-down view
+- **Правое окно (OpenCV)** — first-person view с применёнными визуальными искажениями
+
+### Для чего использовать
+
+| Сценарий | Команда |
+|----------|---------|
+| Проверить BFS pathfinder | `--rows 4 --cols 4 --domain-rand` → смотрите "BFS grid: WxH" |
+| Отладить reward shaping | `--rows 3 --cols 3` → следите за PBRS, novelty, room bonus |
+| Проверить устойчивость к помехам | `--perturbation naive_dr --severity 0.7` |
+| Тестировать на разных размерах | `--rows 2 --cols 2` → `--rows 7 --cols 7` |
+
+---
+
+Скачать этот кусок отдельно: [README_manual_control.md](sandbox:///mnt/agents/output/README_manual_control.md)
+
+Если нужно — вставлю этот блок в полный README.md и пересохраню.
 
 
 ## 📦 Команды для запуска с чекпоинта (быстрый справочник)
@@ -150,10 +227,6 @@ python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --
 python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --mode total_chaos --episodes 100
 ```
 
-
-
-### 4. Полный pipeline-пример
-В конце README добавлен пошаговый пример: обучить baseline → оценить → обучить progressive_dr → оценить → продолжить с чекпоинта.
-
 ---
+
 
