@@ -101,3 +101,59 @@ models/maze_curriculum_baseline_seed_0/
 | `forward_bonus` | `0.0` | Дополнительный бонус за движение вперёд (не используется). |
 | `spin_penalty` | `0.0` | Штраф за вращение на месте (не используется). |
 | `spin_threshold` | `7` | Порог угловой скорости для определения «вращения» (не активно). |
+
+
+
+
+  
+
+## Конфигураций обучения и оценки
+
+### 1. Таблица конфигураций обучения
+| Модель | `perturbation_mode` | `severity` | `enable_domain_rand` |
+|--------|---------------------|------------|----------------------|
+| `baseline` | `"none"` | 0.0 | `False` |
+| `progressive_dr` | `"progressive"` | 0.6 | `True` |
+| `ray_cast` | `"progressive"` | 0.6 | `True` |
+
+### 2. Таблица режимов оценки
+| Режим | `perturbation_mode` | `severity` | `enable_domain_rand` |
+|-------|---------------------|------------|----------------------|
+| `clean` | `"none"` | 0.0 | `False` |
+| `light_dr` | `"none"` | 0.0 | `True` |
+| `sensor_stress` | `"fixed"` | 0.6 | `False` |
+| `total_chaos` | `"naive"` | 0.6 | `True` |
+
+### 3. Полная матрица оценки: 3 модели × 4 режима = **12 команд**
+
+**baseline:**
+```bash
+python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --mode clean --episodes 100
+python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --mode light_dr --episodes 100
+python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --mode sensor_stress --episodes 100
+python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --mode total_chaos --episodes 100
+```
+
+**progressive_dr:**
+```bash
+python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model --mode clean --episodes 100
+python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model --mode light_dr --episodes 100
+python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model --mode sensor_stress --episodes 100
+python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model --mode total_chaos --episodes 100
+```
+
+**ray_cast:**
+```bash
+python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --mode clean --episodes 100
+python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --mode light_dr --episodes 100
+python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --mode sensor_stress --episodes 100
+python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --mode total_chaos --episodes 100
+```
+
+
+
+### 4. Полный pipeline-пример
+В конце README добавлен пошаговый пример: обучить baseline → оценить → обучить progressive_dr → оценить → продолжить с чекпоинта.
+
+---
+
