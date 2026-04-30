@@ -72,8 +72,8 @@ def continue_from_checkpoint(
         print(f"{'='*60}")
 
         # Смена шага оптимизатора после чекпоинта
-        for pg in model.policy.optimizer.param_groups:
-            pg['lr'] = 1e-4
+        #for pg in model.policy.optimizer.param_groups:
+            #pg['lr'] = 1e-4
 
         # Создаём среду для этого уровня
         env = create_vec_env(
