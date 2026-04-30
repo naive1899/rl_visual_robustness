@@ -2,8 +2,91 @@
 
 "Повышение устойчивости навигационных RL-агентов к визуальным помехам"
 
-QR-DQN + Curriculum Learning для MiniWorld Maze
+# QR-DQN + Curriculum Learning для MiniWorld Maze
 Проект обучения робастных навигационных агентов в лабиринтах MiniWorld с использованием QR-DQN (Quantile Regression DQN). Решается задача повышения устойчивости RL-агентов к визуальным помехам и доменной рандомизации через curriculum learning, reward shaping и обучение с domain randomisation.
+
+
+##  Основные возможности
+
+- **QR-DQN** с `MultiInputPolicy` — обработка изображения + вектор состояния `[x, z, sin(θ), cos(θ)]`
+- **Curriculum Learning** — автоматический переход 2×2 → 3×3 → 4×4 → 5×4 → 4×5 → 5×5
+- **Reward Shaping** — PBRS (BFS distance), novelty bonus, room bonus, spin penalty, stagnation penalty
+- **Action Repeat** — повтор действий (repeat=4) с shaped-наградами за решение, не за тик
+- **Визуальные помехи** — `naive_dr` (случайная severity), `progressive` (квадратичный рост), `fixed`
+- **Dilated Frame Stack** — стек кадров t, t-2, t-4, t-6 (n=4, dilation=2)
+- **Ray Casting** — 8 лучей для геометрического обзора (опционально)
+- **Оценка робастности** — 4 режима: clean, light_dr, sensor_stress, total_chaos
+
+
+
+## Структура проекта
+
+```
+QR_DQN/
+├── envs/
+│   ├── env_factory.py          # Фабрика сред MiniWorld
+│   └── wrappers.py             # Wrappers: ShapedReward, Perturbation, ActionRepeat, DilatedFrameStack, MultiModal, RayCasting
+├── perturbations/
+│   ├── __init__.py
+│   └── visual_perturbations.py # Gaussian noise, blur, pixelate, dropout, color jitter
+├── train.py                    # Обучение (curriculum + standard)
+├── evaluate.py                 # Оценка модели в 4 режимах
+├── from_checkpoint.py          # Продолжение обучения с чекпоинта
+├── manual_control.py           # Ручное управление с визуализацией наград
+├── requirements.txt            # Зависимости
+└── README.md                   # Этот файл
+```
+
+-
+
+##  Быстрый старт
+
+### 1. Установка зависимостей
+
+```bash
+# Создание виртуального окружения
+python -m venv miniworld_env
+
+# Windows
+miniworld_env\Scripts\activate
+
+# Linux/Mac
+source miniworld_env/bin/activate
+
+# Обновление pip и установка зависимостей
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### 2. Обучение с нуля в лабиринте MiniWorld-Maze-v0
+
+#### Curriculum Learning (Maze 2×2 → 5×5)
+
+```bash
+# Базовая конфигурация (без помех)
+python train.py --env maze --num-envs 8 --config baseline
+
+# С прогрессивными визуальными помехами
+python train.py --env maze --num-envs 8 --config progressive_dr
+
+# С ray casting (геометрический обзор)
+python train.py --env maze --num-envs 8 --config ray_cast
+```
+
+#### Стандартное обучение (OneRoom, Hallway, TwoRooms)
+
+```bash
+# OneRoom — простая среда для проверки
+python train.py --env oneroom --steps 250000 --num-envs 8 --config baseline
+
+# Hallway
+python train.py --env hallway --steps 300000 --num-envs 8 --config baseline
+
+# TwoRooms
+python train.py --env tworooms --steps 600000 --num-envs 8 --config baseline
+```
+
+
 
 ## Конфигураций обучения и оценки
 
@@ -121,9 +204,6 @@ python manual_control.py --rows 3 --cols 3 --perturbation progressive --severity
 | Отладить reward shaping | `--rows 3 --cols 3` → следите за PBRS, novelty, room bonus |
 | Проверить устойчивость к помехам | `--perturbation naive_dr --severity 0.7` |
 | Тестировать на разных размерах | `--rows 2 --cols 2` → `--rows 7 --cols 7` |
-
-
-
 
 
 
