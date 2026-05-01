@@ -100,12 +100,12 @@ def continue_from_checkpoint(
         )
         model.num_timesteps = 0  # Обнуляем шаги  (критически важно)
         # Сброс exploration на начало
-        from stable_baselines3.common.utils import get_linear_fn
-        model.exploration_schedule = get_linear_fn(
-            start=1.0,            # exploration_initial_eps
-            end=0.15,             # exploration_final_eps
-            end_fraction=0.65      # exploration_fraction 
-        )
+        from stable_baselines3.common.utils import LinearSchedule
+        model.exploration_schedule = LinearSchedule(
+                start=1.0,           # exploration_initial_eps
+                end=0.15,            # exploration_final_eps
+                end_fraction=0.65    # доля времени, в течение которой идёт снижение
+            )
         # Обучение
         model.learn(
             total_timesteps=max_steps,
