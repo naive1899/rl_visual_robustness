@@ -902,12 +902,14 @@ class ShapedRewardWrapper(gym.Wrapper):
             agent_pos = unwrapped.agent.pos
             current_cell = self._get_stagnation_cell(agent_pos)
 
-            if action in [0, 1]:           # Если агент поворачивается, он не считается застрявшим.
-                self.stagnation_steps = 0
+            if action in [0, 1]:
+                # Поворот: НЕ сбрасываем, НЕ увеличиваем — просто обновляем ячейку
                 self.stagnation_prev_cell = current_cell
             elif current_cell == self.stagnation_prev_cell:
+                # FORWARD в той же ячейке — увеличиваем
                 self.stagnation_steps += 1
             else:
+                # FORWARD в новой ячейке — сброс
                 self.stagnation_steps = 0
                 self.stagnation_prev_cell = current_cell
 
