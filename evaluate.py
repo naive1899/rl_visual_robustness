@@ -49,6 +49,7 @@ from envs.wrappers import (
     DilatedFrameStack,
     MultiModalObservationWrapper,
     RayCastingWrapper,
+    WallPenaltyWrapper
 )
 
 # ============================================================
@@ -69,11 +70,12 @@ REWARD_KWARGS = {
     'spin_penalty': 0.0,
     'spin_threshold': 7,
     'use_bfs_distance': True,
-    'grid_resolution': 0.5,
+    'grid_resolution': 0.6,
     'use_stagnation_penalty': True,
     'stagnation_penalty': -0.035,
     'stagnation_threshold': 3,
     'stagnation_precision': 0.5,
+    'wall_collision_penalty':-0.05
 }
 
 DILATED_STACK_KWARGS = {
@@ -455,8 +457,11 @@ def make_eval_env(
     if hasattr(env.unwrapped, 'max_episode_steps'):
         env.unwrapped.max_episode_steps = max_episode_steps
 
+    env = WallPenaltyWrapper(env)
+
     # Shaped rewards (как при обучении)
     env = ShapedRewardWrapper(env, **REWARD_KWARGS)
+    
 
     # PerturbationWrapper — параметры из режима оценки
     mode_params = EVAL_MODES[eval_mode]
@@ -856,6 +861,7 @@ def main():
     args = parser.parse_args()
 
 #   python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --mode clean --episodes 100 --grid-sizes ROWS 5 COLS 4 --analyze-failures
+#   python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --batch --episodes 100 --grid-sizes ROWS 5 COLS 4 --analyze-failures
 
 
     # --- Batch mode ---
