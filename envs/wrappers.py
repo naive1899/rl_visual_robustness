@@ -9,6 +9,7 @@ Wrappers для SB3 с улучшенными Shaped Rewards:
 - Stagnation Penalty (штраф за застревание на месте)
 - MultiModalObservationWrapper: добавляет вектор [x_norm, z_norm, sinθ, cosθ] к изображению -> Dict
 - RayCastingWrapper: добавляет вектор расстояний (8 лучей, FOV=75°, max_dist=10)
+- WallPenaltyWrapper: детектирует столкновение агента со стеной
 """
 import gymnasium as gym
 import numpy as np
@@ -724,6 +725,8 @@ class ShapedRewardWrapper(gym.Wrapper):
         stagnation_penalty: float = -0.05,
         stagnation_threshold: int = 8,
         stagnation_precision: float = 0.25,
+        # Wall collision penalty
+        wall_collision_penalty=-0.05
     ):
         super().__init__(env)
         self.time_penalty = time_penalty
@@ -749,6 +752,9 @@ class ShapedRewardWrapper(gym.Wrapper):
         self.stagnation_penalty = stagnation_penalty
         self.stagnation_threshold = stagnation_threshold
         self.stagnation_precision = stagnation_precision
+
+        # Wall collision penalty
+        self.wall_collision_penalty = wall_collision_penalty
 
         self.prev_dist = None
         self.episode_step = 0
@@ -868,6 +874,7 @@ class ShapedRewardWrapper(gym.Wrapper):
         unwrapped = self.env.unwrapped
         has_agent = hasattr(unwrapped, 'agent') and hasattr(unwrapped.agent, 'pos')
 
+
         # Spin penalty → shaped (НЕ PBRS)
         if has_agent and not is_repeat_tick:
             current_pos = unwrapped.agent.pos
@@ -905,6 +912,20 @@ class ShapedRewardWrapper(gym.Wrapper):
                 shaped_reward += self.stagnation_penalty
                 info['stagnation_penalty'] = self.stagnation_penalty
                 info['stagnation_steps'] = self.stagnation_steps
+
+        # Wall collision penalty → shaped (НЕ PBRS)
+        if info.get('forward_blocked') and not is_repeat_tick:
+            shaped_reward += self.wall_collision_penalty
+            info['wall_collision_penalty'] = self.wall_collision_penalty
+
+            # Wall collision penalty
+            '''
+            print(f"[SR] info.get('forward_blocked')={info.get('forward_blocked')}, "
+                f"is_repeat_tick={is_repeat_tick}, "
+                f"penalty={self.wall_collision_penalty}")                  '''
+            
+        
+
 
         # PBRS → ОТДЕЛЬНО, НЕ добавляем в shaped_reward
         # PBRS вычисляется по финальному состоянию после всех повторов
@@ -960,12 +981,13 @@ class ShapedRewardWrapper(gym.Wrapper):
             grid_coords = self.pathfinder.get_grid_coords(agent_pos)
             bounds = self.pathfinder.get_world_bounds()
 
-            if self.episode_step % 2 == 0:
-                print(f"[BFS] Start agent=({agent_pos[0]:.2f},{agent_pos[2]:.2f}), "
-                    f"goal=({goal_pos[0]:.2f},{goal_pos[2]:.2f}), "
-                    f"grid=({grid_coords[0]},{grid_coords[1]}), bfs_dist={self.prev_dist:.1f}, "
-                    f"eucl_dist={eucl_dist:.1f}, max_bfs={max_dist:.1f}")
-                #print(f"[BFS] Bounds: {bounds}")       '''                                                                                  
+            
+            print(f"[BFS] Start agent=({agent_pos[0]:.2f},{agent_pos[2]:.2f}), "
+                f"goal=({goal_pos[0]:.2f},{goal_pos[2]:.2f}), "
+                f"grid=({grid_coords[0]},{grid_coords[1]}), bfs_dist={self.prev_dist:.1f}, "   
+                f"eucl_dist={eucl_dist:.1f}, max_bfs={max_dist:.1f}")                             ''' 
+                    
+                #print(f"[BFS] Bounds: {bounds}")                                                                                      
             
 
         # Novelty reward → shaped (НЕ PBRS)
@@ -1249,106 +1271,203 @@ class MultiModalObservationWrapper(gym.ObservationWrapper):
 
 
 
+
+
+class WallPenaltyWrapper(gym.Wrapper):
+    """
+    Детектирует столкновение со стеной при движении вперёд (action=2).
+    Штрафуем только за FORWARD, когда агент не сдвинулся (уперся в стену).
+    Повороты (action=0,1) — без штрафа.
+    """
+    def __init__(self, env: gym.Env, forward_step: float = 0.225, 
+                 position_threshold: float = 0.1):
+        super().__init__(env)
+        self.forward_step = forward_step
+        self.position_threshold = position_threshold
+
+    def step(self, action):
+        # Запоминаем позицию ДО шага
+        unwrapped = self.env.unwrapped
+        prev_pos = None
+        if hasattr(unwrapped, 'agent') and unwrapped.agent is not None:
+            prev_pos = unwrapped.agent.pos.copy()
+        
+        # Делаем шаг
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        
+        # Проверяем столкновение ТОЛЬКО для FORWARD (action=2)
+        forward_blocked = False
+        if action == 2 and prev_pos is not None:
+            if hasattr(unwrapped, 'agent') and unwrapped.agent is not None:
+                new_pos = unwrapped.agent.pos
+                moved = np.sqrt((new_pos[0] - prev_pos[0])**2 + 
+                               (new_pos[2] - prev_pos[2])**2)
+                
+                # Если не сдвинулся — уперся в стену
+                if moved < self.position_threshold:
+                    forward_blocked = True
+        
+        info['forward_blocked'] = forward_blocked
+        return obs, reward, terminated, truncated, info
+
+    def reset(self, **kwargs):
+        return self.env.reset(**kwargs)
+    
+
+
 class RayCastingWrapper(gym.ObservationWrapper):
     """
-    Добавляет к наблюдению вектор расстояний до препятствий (лучи).
-    Лучи: 8 лучей в пределах FOV=75° (от -37.5° до +37.5° относительно направления агента).
-    Нормализация: d = 1.0 - min(raw_distance, max_dist) / max_dist, где max_dist = 10.0.
-    Результат: словарь дополняется ключом 'rays' с массивом (num_rays,).
+    Raycasting на основе карты BFS (DDA по obstacle_map).
+
+    Добавляет в наблюдение ключ 'rays' – нормализованные расстояния
+    до препятствий (1 = близко, 0 = дальше max_dist).
+    Совместим со словарём {'image', 'vector'} (ожидает на входе именно такой dict).
     """
-    def __init__(self, env: gym.Env, num_rays: int = 8, max_dist: float = 10.0, fov: float = 75.0):
+    def __init__(self, env: gym.Env, num_rays=8, max_dist=10.0, fov=75.0,
+                 grid_resolution=0.1):
         super().__init__(env)
         self.num_rays = num_rays
         self.max_dist = max_dist
-        self.fov = fov  # в градусах
-        # Углы лучей относительно направления агента (в градусах)
+        self.fov = fov
+        self.grid_resolution = grid_resolution
+
+        # Углы лучей относительно направления агента (градусы)
         half_fov = fov / 2.0
         self.relative_angles_deg = np.linspace(-half_fov, half_fov, num_rays)
-        
-        # Обновляем пространство наблюдения
+
+        # Обновляем observation_space: добавляем 'rays'
         if isinstance(env.observation_space, gym.spaces.Dict):
-            old_space = env.observation_space
+            old_spaces = env.observation_space.spaces
+            if 'image' not in old_spaces or 'vector' not in old_spaces:
+                raise ValueError("BFSRayCastingWrapper ожидает на входе dict с ключами 'image' и 'vector'.")
             rays_space = gym.spaces.Box(low=0.0, high=1.0, shape=(num_rays,), dtype=np.float32)
-            new_space_dict = old_space.spaces.copy()
-            new_space_dict['rays'] = rays_space
-            self.observation_space = gym.spaces.Dict(new_space_dict)
+            new_spaces = {**old_spaces, 'rays': rays_space}
+            self.observation_space = gym.spaces.Dict(new_spaces)
         else:
-            # Если не словарь, создаём словарь с исходным наблюдением как 'obs' и добавляем 'rays'
+            # На всякий случай, если вдруг используется без MultiModal
             self.observation_space = gym.spaces.Dict({
                 'obs': env.observation_space,
                 'rays': gym.spaces.Box(low=0.0, high=1.0, shape=(num_rays,), dtype=np.float32)
             })
-    
+
+        # Патфайндер будет создан при первом reset
+        self.pathfinder = None
+
     def reset(self, **kwargs):
         obs, info = self.env.reset(**kwargs)
+        # Строим карту один раз (если есть цель)
+        unwrapped = self.env.unwrapped
+        if hasattr(unwrapped, 'box') and unwrapped.box.pos is not None:
+            goal_pos = unwrapped.box.pos
+            self.pathfinder = BFSPathfinder(
+                self.env,
+                grid_resolution=self.grid_resolution,
+                use_top_view=False
+            )
+            self.pathfinder.build_grid(goal_pos=goal_pos)
+        else:
+            self.pathfinder = None
         return self.observation(obs), info
-    
+
     def step(self, action):
         obs, reward, terminated, truncated, info = self.env.step(action)
         return self.observation(obs), reward, terminated, truncated, info
-    
+
     def observation(self, obs):
-        """
-        Вычисляет расстояния до препятствий и добавляет их в словарь.
-        """
-        # Получаем агента
+        # obs гарантированно словарь с 'image' и 'vector'
         unwrapped = self.env.unwrapped
         agent = getattr(unwrapped, 'agent', None)
-        if agent is not None and hasattr(agent, 'pos') and hasattr(agent, 'dir'):
-            agent_pos = agent.pos  # (x, y, z)
-            agent_dir_deg = agent.dir  # направление в градусах
-            # Переводим в радианы для вычисления направления лучей
-            agent_dir_rad = np.radians(agent_dir_deg)
-            # Компьютерные оси: x, z
-            origin = np.array([agent_pos[0], agent_pos[2]])
-            # Для каждого луча
-            ray_distances = np.ones(self.num_rays, dtype=np.float32)
+
+        ray_distances = np.ones(self.num_rays, dtype=np.float32)
+
+        if agent is not None and self.pathfinder is not None:
+            origin = np.array([agent.pos[0], agent.pos[2]])
+            angle_deg = agent.dir
+
             for i, rel_deg in enumerate(self.relative_angles_deg):
-                # Абсолютный угол в градусах
-                abs_deg = agent_dir_deg + rel_deg
-                abs_rad = np.radians(abs_deg)
-                direction = np.array([np.cos(abs_rad), np.sin(abs_rad)])
-                # Выполняем ray casting
-                raw_dist = self._raycast(origin, direction)
+                abs_deg = angle_deg + rel_deg
+                rad = np.radians(abs_deg)
+                direction = np.array([np.cos(rad), np.sin(rad)])
+
+                raw_dist = self._dda_raycast(origin, direction)
                 if raw_dist is None:
                     raw_dist = self.max_dist
                 dist = min(raw_dist, self.max_dist)
-                # Нормализация: 1 - dist/max_dist (1 близко, 0 далеко)
-                norm = 1.0 - (dist / self.max_dist)
-                ray_distances[i] = np.clip(norm, 0.0, 1.0)
-            # Добавляем в словарь
-            if isinstance(obs, dict):
-                return {**obs, 'rays': ray_distances}
-            else:
-                return {'obs': obs, 'rays': ray_distances}
+                # Нормализация: 1.0 очень близко, 0.0 далеко
+                ray_distances[i] = 1.0 - (dist / self.max_dist)
+
+        # Добавляем rays в словарь
+        if isinstance(obs, dict):
+            obs['rays'] = ray_distances
         else:
-            # fallback
-            ray_distances = np.zeros(self.num_rays, dtype=np.float32)
-            if isinstance(obs, dict):
-                return {**obs, 'rays': ray_distances}
+            obs = {'obs': obs, 'rays': ray_distances}
+        return obs
+
+    def _dda_raycast(self, origin, direction):
+        """
+        DDA (Digital Differential Analyzer) по obstacle_map.
+        Возвращает расстояние до первого препятствия в мировых единицах,
+        либо None (если не найдено в пределах max_dist).
+        """
+        grid = self.pathfinder
+        if grid is None or grid.obstacle_map is None:
+            return None
+
+        # Начальные индексы ячейки, в которой находится origin
+        ix, iz = grid._world_to_grid([origin[0], 0, origin[1]], warn=False)
+
+        # Направление приращения индексов (знак)
+        step_x = 1 if direction[0] >= 0 else -1
+        step_z = 1 if direction[1] >= 0 else -1
+
+        # Граничные расстояния до следующей вертикальной/горизонтальной линии сетки
+        cell_x, cell_z = ix, iz
+        world_x, world_z = origin[0], origin[1]
+
+        next_boundary_x = (cell_x + (1 if direction[0] > 0 else 0)) * grid.grid_resolution + grid.offset_x
+        next_boundary_z = (cell_z + (1 if direction[1] > 0 else 0)) * grid.grid_resolution + grid.offset_z
+
+        if abs(direction[0]) > 1e-8:
+            t_delta_x = grid.grid_resolution / abs(direction[0])
+            t_max_x = (next_boundary_x - world_x) / direction[0]
+        else:
+            t_delta_x = float('inf')
+            t_max_x = float('inf')
+
+        if abs(direction[1]) > 1e-8:
+            t_delta_z = grid.grid_resolution / abs(direction[1])
+            t_max_z = (next_boundary_z - world_z) / direction[1]
+        else:
+            t_delta_z = float('inf')
+            t_max_z = float('inf')
+
+        travelled = 0.0
+        max_steps = int(self.max_dist / grid.grid_resolution) + 10  # запас
+
+        for _ in range(max_steps):
+            if t_max_x < t_max_z:
+                travelled = t_max_x
+                cell_x += step_x
+                if cell_x < 0 or cell_x >= grid.width or cell_z < 0 or cell_z >= grid.height:
+                    return None
+                if grid.obstacle_map[cell_z, cell_x] == 1:
+                    return travelled
+                t_max_x += t_delta_x
             else:
-                return {'obs': obs, 'rays': ray_distances}
+                travelled = t_max_z
+                cell_z += step_z
+                if cell_x < 0 or cell_x >= grid.width or cell_z < 0 or cell_z >= grid.height:
+                    return None
+                if grid.obstacle_map[cell_z, cell_x] == 1:
+                    return travelled
+                t_max_z += t_delta_z
+
+            if travelled >= self.max_dist:
+                return None
+
+        return None
     
-    def _raycast(self, origin, direction):
-        """
-        Выполняет бросание луча из точки origin в направлении direction (2D).
-        Возвращает расстояние до первого препятствия или None, если препятствие не найдено.
-        Использует внутренний метод среды, если доступен.
-        """
-        unwrapped = self.env.unwrapped
-        # Пытаемся использовать встроенный ray_cast, если есть
-        if hasattr(unwrapped, 'ray_cast'):
-            # Ожидаем, что метод принимает позицию (x,y,z) и направление (dx,dy,dz)
-            pos_3d = (origin[0], 0.0, origin[1])
-            dir_3d = (direction[0], 0.0, direction[1])
-            try:
-                dist = unwrapped.ray_cast(pos_3d, dir_3d, self.max_dist)
-                return dist
-            except:
-                return self.max_dist
-        else:
-            # Заглушка: возвращаем max_dist (нет препятствий)
-            return self.max_dist
+
 
 
 # make_env (фабричная функция)
@@ -1388,7 +1507,7 @@ def make_env(
     use_dilated_stack: bool = True,
     n_stack: int = 4,
     dilation: int = 2,
-    # Ray casting будет добавлен позже в зависимости от config
+    wall_collision_penalty=-0.1
 ):
     """
     Фабричная функция для создания env.
@@ -1408,7 +1527,9 @@ def make_env(
         max_episode_steps=max_episode_steps,
         seed=seed
     )
-
+    
+    env = WallPenaltyWrapper(env) 
+    
     if use_shaped_reward:
         env = ShapedRewardWrapper(
             env,
@@ -1428,12 +1549,15 @@ def make_env(
             use_bfs_distance=use_bfs_distance,
             grid_resolution=grid_resolution,
             use_top_view=use_top_view,
-            # === Stagnation ===
+            # Stagnation
             use_stagnation_penalty=use_stagnation_penalty,
             stagnation_penalty=stagnation_penalty,
             stagnation_threshold=stagnation_threshold,
             stagnation_precision=stagnation_precision,
+            wall_collision_penalty=wall_collision_penalty
         )
+    
+    
 
     # Action Repeat ПОСЛЕ ShapedRewardWrapper, чтобы ShapedRewardWrapper 
     # видел action_repeat_tick в info
