@@ -17,7 +17,7 @@ from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.callbacks import CheckpointCallback, BaseCallback
 from stable_baselines3.common.monitor import Monitor
 from envs.env_factory import MiniWorldEnvFactory      
-from envs.wrappers import ShapedRewardWrapper, PerturbationWrapper, DilatedFrameStack, ActionRepeatWrapper, MultiModalObservationWrapper, RayCastingWrapper
+from envs.wrappers import ShapedRewardWrapper, PerturbationWrapper, DilatedFrameStack, ActionRepeatWrapper, MultiModalObservationWrapper, RayCastingWrapper, WallPenaltyWrapper
 
 
 class LevelMetricsCallback(BaseCallback):
@@ -159,7 +159,7 @@ MAZE_CURRICULUM = [
     {  # 3
         'grid_size': (5, 4),
         'max_timesteps': 5_000_000,    
-        'max_episode_steps': 550,
+        'max_episode_steps': 750,
         'label': '5x4',
         'target_success_rate': 95.0,
         'window_size': 200,
@@ -167,7 +167,7 @@ MAZE_CURRICULUM = [
     { # 4
         'grid_size': (4, 5),
         'max_timesteps': 5_000_000,    
-        'max_episode_steps': 550,
+        'max_episode_steps': 750,
         'label': '4x5',
         'target_success_rate': 95.0,
         'window_size': 200,
@@ -175,7 +175,7 @@ MAZE_CURRICULUM = [
     { # 5
         'grid_size': (5, 5),
         'max_timesteps': 7_000_000,    
-        'max_episode_steps': 800,
+        'max_episode_steps': 900,
         'label': '5x5',
         'target_success_rate': 93.0,
         'window_size': 200,
@@ -212,29 +212,33 @@ def make_env(env_name, rank, seed, config,  grid_size=None, max_episode_steps=No
         if hasattr(env.unwrapped, 'max_episode_steps'):
             env.unwrapped.max_episode_steps = max_steps
 
+        env = WallPenaltyWrapper(env)
+
         # Параметры shaped reward
         reward_kwargs = {
             'time_penalty': -0.01,
             'distance_reward_coef': 3.0,
             'goal_bonus': 10.0,
             'use_pbrs': True,
-            'gamma': 0.99,
+            'gamma': 1.0,
             'use_novelty_reward': False,
-            'novelty_bonus': 0.05,
+            'novelty_bonus': 0.02,
             'use_room_reward': True,
             'room_bonus': 0.3,   
             'forward_bonus': 0.0,
             'spin_penalty': 0.0,
             'spin_threshold': 7,
             'use_bfs_distance': True,
-            'grid_resolution': 0.5,
+            'grid_resolution': 0.6,
             'use_stagnation_penalty': True,
-            'stagnation_penalty': -0.2,
-            'stagnation_threshold':  3,  
+            'stagnation_penalty': -0.05,
+            'stagnation_threshold':  5,  
             'stagnation_precision': 0.2,
+            'wall_collision_penalty':-0.1
         }
         
         env = ShapedRewardWrapper(env, **reward_kwargs)
+        
 
         # Action Repeat (если >1)
         if action_repeat > 1:
@@ -253,7 +257,7 @@ def make_env(env_name, rank, seed, config,  grid_size=None, max_episode_steps=No
         # Dilated Frame Stack (только изображение)
         if use_dilated_stack:
             env = DilatedFrameStack(env, n_stack=n_stack, dilation=dilation)
-            print(f" DilatedFrameStack: {n_stack} кадров (шаг {dilation})")
+            print(f"   DilatedFrameStack: {n_stack} кадров (шаг {dilation})")
 
         # MultiModalObservationWrapper - добавляет вектор и формирует Dict
         env = MultiModalObservationWrapper(env)
@@ -261,7 +265,7 @@ def make_env(env_name, rank, seed, config,  grid_size=None, max_episode_steps=No
         # Ray Casting если конфиг ray_cast
         if config == "ray_cast":
             env = RayCastingWrapper(env, num_rays=8, max_dist=10.0, fov=75.0)
-            print(f"  RayCastingWrapper: 8 лучей, FOV=75°, max_dist=10")
+            print(f"   RayCastingWrapper: 8 лучей, FOV=75°, max_dist=10")
 
         log_dir = f"models/{env_name}_{config}_seed_{seed}/logs"
         os.makedirs(log_dir, exist_ok=True)
@@ -292,10 +296,10 @@ def create_vec_env(env_name, num_envs, seed, config, grid_size=None, max_episode
 
     print(f"   Observation space: {env.observation_space}")
     if use_dilated_stack:
-        print(f"   🧩 Dilated Frame Stack: {n_stack} кадров (dilation={dilation})")
-    print(f"   📊 MultiModal: изображение + вектор [x_norm, z_norm, sin, cos]")
+        print(f"    Dilated Frame Stack: {n_stack} кадров (dilation={dilation})")
+    print(f"    MultiModal: изображение + вектор [x_norm, z_norm, sin, cos]")
     if config == "ray_cast":
-        print(f"   🔦 RayCasting: добавлены лучи (8) в наблюдение")
+        print(f"    RayCasting: добавлены лучи (8) в наблюдение")
     
     return env
 
@@ -379,7 +383,7 @@ def train_curriculum_maze(num_envs, seed, config, save_dir):
         target_sr = level_config['target_success_rate']
         window_size = level_config['window_size']
 
-        print(f"\n📚 Уровень {level_idx + 1}/{len(MAZE_CURRICULUM)}: {label}")
+        print(f"\n Уровень {level_idx + 1}/{len(MAZE_CURRICULUM)}: {label}")
         print(f"   Максимум шагов: {max_steps:,} | Макс. длина эпизода: {max_episode_steps}")
         print(f"   Целевой success rate: {target_sr}% (окно {window_size} эпизодов)")
 
@@ -394,16 +398,17 @@ def train_curriculum_maze(num_envs, seed, config, save_dir):
             model = QRDQN(
                 "MultiInputPolicy",   # используем политику для Dict наблюдений
                 env,
-                learning_rate=2e-4,
+                learning_rate=1e-4,
                 buffer_size=200_000,
-                learning_starts=20_000,
+                learning_starts=50_000,
                 batch_size=64,
                 train_freq=4,     
                 gradient_steps=2, 
                 tau=0.005,
                 target_update_interval=1,
                 gamma=0.99,
-                exploration_fraction=0.5,
+                exploration_initial_eps = 0.5,
+                exploration_fraction=0.35,
                 exploration_final_eps=0.1,
                 policy_kwargs={
                     "n_quantiles": 32,
@@ -418,6 +423,7 @@ def train_curriculum_maze(num_envs, seed, config, save_dir):
             )
         else:
             model.set_env(env)
+            
 
         checkpoint_dir = os.path.join(model_dir, f"checkpoints_{label}")
         os.makedirs(checkpoint_dir, exist_ok=True)
