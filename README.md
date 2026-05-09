@@ -1,12 +1,12 @@
 "Повышение устойчивости навигационных RL-агентов к визуальным помехам"
 
-# QR-DQN + Curriculum Learning для MiniWorld Maze
-Проект обучения робастных навигационных агентов в лабиринтах MiniWorld с использованием QR-DQN (Quantile Regression DQN). Решается задача повышения устойчивости RL-агентов к визуальным помехам и доменной рандомизации через curriculum learning, reward shaping и обучение с domain randomisation.
+# PPO + Curriculum Learning для MiniWorld Maze
+Проект обучения робастных навигационных агентов в лабиринтах MiniWorld с использованием PPO (Proximal Policy Optimization). Решается задача повышения устойчивости RL-агентов к визуальным помехам и доменной рандомизации через curriculum learning, reward shaping и обучение с domain randomisation.
 
 
 ##  Основные возможности
 
-- **QR-DQN** с `MultiInputPolicy` — обработка изображения + вектор состояния `[x, z, sin(θ), cos(θ)]`
+- **PPO** с `MultiInputPolicy` — обработка изображения + вектор состояния `[x, z, sin(θ), cos(θ)]`
 - **Curriculum Learning** — автоматический переход 2×2 → 3×3 → 4×4 → 5×4 → 4×5 → 5×5
 - **Reward Shaping** — PBRS (BFS distance), novelty bonus, room bonus, spin penalty, stagnation penalty
 - **Action Repeat** — повтор действий (repeat=4) с shaped-наградами за решение, не за тик
