@@ -7,15 +7,16 @@
 import argparse
 import os
 from sb3_contrib import QRDQN
+from stable_baselines3 import PPO   
 from train import create_vec_env, MAZE_CURRICULUM, LevelMetricsCallback, CurriculumSuccessCallback
 
 
 # Ваш путь:
-BASE_MODELS_DIR = r"C:\Users\ПК\Desktop\QR_DQN\models"
+BASE_MODELS_DIR = r"C:\Users\PC\Desktop\visual_agent\models"
 # ------------------------------------------------
 
 def continue_from_checkpoint(
-    start_level_idx: int = 3,   # 0=2x2, 1=3x3, 2=4x4, 3=5x4, 4=x5, 5=5x5
+    start_level_idx: int = 3,   # 0=4x4, 1=4x5, 2=5x4, 3=5x5, 4=10x10
     seed: int = 0,
     config: str = 'baseline',
     num_envs: int = 8,
@@ -41,16 +42,17 @@ def continue_from_checkpoint(
         raise FileNotFoundError(f"Чекпоинт не найден: {checkpoint_path}")
 
     print(f"📦 Загрузка чекпоинта: {checkpoint_path}")
-    model = QRDQN.load(checkpoint_path, device="auto")
+    model = PPO.load(checkpoint_path, device="auto")
+    #model = QRDQN.load(checkpoint_path, device="auto")
 
     # ЗАГРУЗКА БУФФЕРА
-    buffer_path = os.path.join(save_dir, run_name, f"level_{prev_label}_replay_buffer.pkl")
+    """ buffer_path = os.path.join(save_dir, run_name, f"level_{prev_label}_replay_buffer.pkl")
     if os.path.exists(buffer_path):
         print(f"Загрузка Replay Buffer: {buffer_path}")
         model.load_replay_buffer(buffer_path)
     else:
-        print("⚠️ Файл буфера не найден, обучение начнется с пустого опыта!")
-    # ------------------
+        print("⚠️ Файл буфера не найден, обучение начнется с пустого опыта!") """
+    # ------------------QRDQN
 
 
     model_dir = os.path.join(save_dir, run_name)
@@ -71,10 +73,7 @@ def continue_from_checkpoint(
         print(f"   Целевой Success Rate: {target_sr}% (окно {window_size})")
         print(f"{'='*60}")
 
-        # Смена шага оптимизатора после чекпоинта
-        #for pg in model.policy.optimizer.param_groups:
-            #pg['lr'] = 1e-4
-
+        
         # Создаём среду для этого уровня
         env = create_vec_env(
             'maze', num_envs, seed, config, 
@@ -98,14 +97,28 @@ def continue_from_checkpoint(
             name_prefix=f"qrdqn_{label}",
             verbose=1
         )
-        model.num_timesteps = 0  # Обнуляем шаги  (критически важно)
-        # Сброс exploration на начало
+
+        """ model.num_timesteps = 0
         from stable_baselines3.common.utils import LinearSchedule
         model.exploration_schedule = LinearSchedule(
-                start=1.0,           # exploration_initial_eps
-                end=0.15,            # exploration_final_eps
-                end_fraction=0.65    # доля времени, в течение которой идёт снижение
-            )
+                start=0.5,           # exploration_initial_eps
+                end=0.07,             # exploration_final_eps
+                end_fraction=0.2    # доля времени, в течение которой идёт снижение
+            ) """
+
+        model.clip_range = lambda _: 0.1
+        model.clip_range_vf = lambda _: 0.1
+        model.ent_coef = 0.01
+
+
+        # Обновляем optimizer
+        model.learning_rate = lambda _: 1e-4
+        model.lr_schedule = lambda _: 1e-4
+        for param_group in model.policy.optimizer.param_groups:
+            param_group["lr"] = 1e-4
+
+        
+        
         # Обучение
         model.learn(
             total_timesteps=max_steps,
@@ -119,7 +132,7 @@ def continue_from_checkpoint(
         # Сохраняем финальную модель уровня
         level_path = os.path.join(model_dir, f"level_{label}_final")
         model.save(level_path)
-        model.save_replay_buffer(os.path.join(model_dir, f"level_{label}_replay_buffer"))  # БУФФЕР
+        #model.save_replay_buffer(os.path.join(model_dir, f"level_{label}_replay_buffer"))  # БУФФЕР
         print(f"✅ Сохранено: {level_path}")
 
         # Если уровень не пройден по success rate — останавливаем curriculum
@@ -152,6 +165,7 @@ if __name__ == "__main__":
         save_dir=BASE_MODELS_DIR   # путь зашит в коде
     )
 
-# python from_checkpoint.py --level 3 --config baseline  
-# python from_checkpoint.py --level 3 --config progressive_dr
+# python from_checkpoint.py --level 4 --config baseline  
+# python from_checkpoint.py --level 4 --config progressive_dr
+
 # python from_checkpoint.py --level 3 --config ray_cast
