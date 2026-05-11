@@ -12,7 +12,7 @@ from train import create_vec_env, MAZE_CURRICULUM, LevelMetricsCallback, Curricu
 
 
 # Ваш путь:
-BASE_MODELS_DIR = r"C:\Users\PC\Desktop\visual_agent\models"
+BASE_MODELS_DIR = r"C:\PPO\models"
 # ------------------------------------------------
 
 def continue_from_checkpoint(
