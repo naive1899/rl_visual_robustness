@@ -10,10 +10,10 @@ from sb3_contrib import QRDQN
 from stable_baselines3 import PPO   
 from train import create_vec_env, MAZE_CURRICULUM, LevelMetricsCallback, CurriculumSuccessCallback
 
-
-# Ваш путь:
-BASE_MODELS_DIR = r"C:\PPO\models"
-# ------------------------------------------------
+from pathlib import Path
+# Path(__file__).resolve() — это полный путь к файлу
+# .parent — это папка, в которой он лежит
+BASE_MODELS_DIR = Path(__file__).resolve().parent / "models"
 
 def continue_from_checkpoint(
     start_level_idx: int = 3,   # 0=4x4, 1=4x5, 2=5x4, 3=5x5, 4=10x10
