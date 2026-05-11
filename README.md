@@ -107,10 +107,10 @@ python train.py --env tworooms --steps 600000 --num-envs 8 --config baseline
 
 **baseline:**
 ```bash
-python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --mode clean --episodes 100
-python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --mode light_dr --episodes 100
-python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --mode sensor_stress --episodes 100
-python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model --mode total_chaos --episodes 100
+python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model.zip --mode clean --episodes 100
+python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model.zip --mode light_dr --episodes 100
+python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model.zip --mode sensor_stress --episodes 100
+python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model.zip --mode total_chaos --episodes 100
 ```
 Пакетная оценка
 ```bash
@@ -119,10 +119,10 @@ python evaluate.py --model models/maze_curriculum_baseline_seed_0/final_model.zi
 
 **progressive_dr:**
 ```bash
-python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model --mode clean --episodes 100
-python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model --mode light_dr --episodes 100
-python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model --mode sensor_stress --episodes 100
-python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model --mode total_chaos --episodes 100
+python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model.zip --mode clean --episodes 100
+python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model.zip --mode light_dr --episodes 100
+python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model.zip --mode sensor_stress --episodes 100
+python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_model.zip --mode total_chaos --episodes 100
 ```
 Пакетная оценка
 ```bash
@@ -131,10 +131,10 @@ python evaluate.py --model models/maze_curriculum_progressive_dr_seed_0/final_mo
 
 **ray_cast:**
 ```bash
-python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --mode clean --episodes 100
-python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --mode light_dr --episodes 100
-python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --mode sensor_stress --episodes 100
-python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model --mode total_chaos --episodes 100
+python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model.zip --mode clean --episodes 100
+python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model.zip --mode light_dr --episodes 100
+python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model.zip --mode sensor_stress --episodes 100
+python evaluate.py --model models/maze_curriculum_ray_cast_seed_0/final_model.zip --mode total_chaos --episodes 100
 ```
 Пакетная оценка
 ```bash
