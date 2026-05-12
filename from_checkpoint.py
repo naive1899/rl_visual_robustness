@@ -43,20 +43,13 @@ def continue_from_checkpoint(
 
     print(f"📦 Загрузка чекпоинта: {checkpoint_path}")
     model = PPO.load(checkpoint_path, device="auto")
-    #model = QRDQN.load(checkpoint_path, device="auto")
-
-    # ЗАГРУЗКА БУФФЕРА
-    """ buffer_path = os.path.join(save_dir, run_name, f"level_{prev_label}_replay_buffer.pkl")
-    if os.path.exists(buffer_path):
-        print(f"Загрузка Replay Buffer: {buffer_path}")
-        model.load_replay_buffer(buffer_path)
-    else:
-        print("⚠️ Файл буфера не найден, обучение начнется с пустого опыта!") """
-    # ------------------QRDQN
-
-
+    
     model_dir = os.path.join(save_dir, run_name)
     os.makedirs(model_dir, exist_ok=True)
+
+    # Перенаправляем TensorBoard в новую папку
+    model.tensorboard_log = os.path.join(model_dir, "tensorboard")
+    model._logger = None          # заставим model.learn создать новый логгер
 
     # Проходим оставшиеся уровни, начиная с start_level_idx
     for level_idx in range(start_level_idx, len(MAZE_CURRICULUM)):
@@ -98,18 +91,10 @@ def continue_from_checkpoint(
             verbose=1
         )
 
-        """ model.num_timesteps = 0
-        from stable_baselines3.common.utils import LinearSchedule
-        model.exploration_schedule = LinearSchedule(
-                start=0.5,           # exploration_initial_eps
-                end=0.07,             # exploration_final_eps
-                end_fraction=0.2    # доля времени, в течение которой идёт снижение
-            ) """
-
+     
         model.clip_range = lambda _: 0.1
         model.clip_range_vf = lambda _: 0.1
         model.ent_coef = 0.01
-
 
         # Обновляем optimizer
         model.learning_rate = lambda _: 1e-4
@@ -117,8 +102,7 @@ def continue_from_checkpoint(
         for param_group in model.policy.optimizer.param_groups:
             param_group["lr"] = 1e-4
 
-        
-        
+             
         # Обучение
         model.learn(
             total_timesteps=max_steps,
