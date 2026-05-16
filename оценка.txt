@@ -1,0 +1,388 @@
+(miniworld_env) C:\PPO>python evaluate.py --model models/maze_baseline_seed_0/level_5x5_final.zip --config baseline --all-modes --episodes 100 
+
+======================================================================
+📦 ПАРАЛЛЕЛЬНАЯ ОЦЕНКА: level_5x5_final.zip
+🗺️  5x5 | envs=8 | eps=100
+======================================================================
+
+============================================================
+📦 level_5x5_final.zip | baseline | clean
+🗺️  5x5 | steps=1150
+🎲 Эпизодов: 96 (12 на 8 env)
+🎯 Deterministic: False | Seed: 0
+============================================================
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+Wrapping the env in a VecTransposeImage.
+clean: 100%|█| 96/96 [00:50<00:00,  1.90it/s, succ=88.5%, avgR=7.4, le
+
+✅ clean: SR=88.5%, R=7.40±16.59, L=354
+
+============================================================
+📦 level_5x5_final.zip | baseline | light_dr
+🗺️  5x5 | steps=1150
+🎲 Эпизодов: 96 (12 на 8 env)
+🎯 Deterministic: False | Seed: 0
+============================================================
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+Wrapping the env in a VecTransposeImage.
+light_dr: 100%|█| 96/96 [01:13<00:00,  1.31it/s, succ=65.6%, avgR=-6.0
+
+✅ light_dr: SR=65.6%, R=-6.03±27.92, L=593
+
+============================================================
+📦 level_5x5_final.zip | baseline | sensor_stress
+🗺️  5x5 | steps=1150
+🎲 Эпизодов: 96 (12 на 8 env)
+🎯 Deterministic: False | Seed: 0
+============================================================
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+Falling back to num_samples=8
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+Wrapping the env in a VecTransposeImage.
+sensor_stress: 100%|█| 96/96 [01:17<00:00,  1.25it/s, succ=82.3%, avgR
+
+✅ sensor_stress: SR=82.3%, R=3.96±13.15, L=453
+
+============================================================
+📦 level_5x5_final.zip | baseline | total_chaos
+🗺️  5x5 | steps=1150
+🎲 Эпизодов: 96 (12 на 8 env)
+🎯 Deterministic: False | Seed: 0
+============================================================
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+Wrapping the env in a VecTransposeImage.
+total_chaos: 100%|█| 96/96 [01:27<00:00,  1.09it/s, succ=69.8%, avgR=-
+
+✅ total_chaos: SR=69.8%, R=-2.23±19.13, L=549
+
+======================================================================
+📊 СВОДНАЯ ТАБЛИЦА
+======================================================================
+Режим               SR %     Reward   Length
+---------------------------------------------
+clean              88.5%      7.40      354
+light_dr           65.6%     -6.03      593
+sensor_stress      82.3%      3.96      453
+total_chaos        69.8%     -2.23      549
+
+💾 Сохранено: results/level_5x5_final_parallel_8env_20260516_174104
+
+
+
+
+
+
+(miniworld_env) C:\PPO>python evaluate.py --model models/maze_progressive_dr_seed_0/level_5x5_final.zip --config progressive_dr --all-modes --episodes 100
+
+======================================================================
+📦 ПАРАЛЛЕЛЬНАЯ ОЦЕНКА: level_5x5_final.zip
+🗺️  5x5 | envs=8 | eps=100
+======================================================================
+
+============================================================
+📦 level_5x5_final.zip | progressive_dr | clean
+🗺️  5x5 | steps=1150
+🎲 Эпизодов: 96 (12 на 8 env)
+🎯 Deterministic: False | Seed: 0
+============================================================
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+Wrapping the env in a VecTransposeImage.
+clean: 100%|█| 96/96 [00:40<00:00,  2.35it/s, succ=99.0%, avgR=9.9, le
+
+✅ clean: SR=99.0%, R=9.86±13.57, L=243
+
+============================================================
+📦 level_5x5_final.zip | progressive_dr | light_dr
+🗺️  5x5 | steps=1150
+🎲 Эпизодов: 96 (12 на 8 env)
+🎯 Deterministic: False | Seed: 0
+============================================================
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+Wrapping the env in a VecTransposeImage.
+light_dr: 100%|█| 96/96 [00:50<00:00,  1.89it/s, succ=96.9%, avgR=9.4,
+
+✅ light_dr: SR=96.9%, R=9.44±13.51, L=343
+
+============================================================
+📦 level_5x5_final.zip | progressive_dr | sensor_stress
+🗺️  5x5 | steps=1150
+🎲 Эпизодов: 96 (12 на 8 env)
+🎯 Deterministic: False | Seed: 0
+============================================================
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+Wrapping the env in a VecTransposeImage.
+sensor_stress: 97it [00:53,  1.82it/s, succ=99.0%, avgR=6.7, len=251] 
+
+✅ sensor_stress: SR=99.0%, R=6.67±28.34, L=251
+
+============================================================
+📦 level_5x5_final.zip | progressive_dr | total_chaos
+🗺️  5x5 | steps=1150
+🎲 Эпизодов: 96 (12 на 8 env)
+🎯 Deterministic: False | Seed: 0
+============================================================
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+Wrapping the env in a VecTransposeImage.
+total_chaos: 100%|█| 96/96 [01:01<00:00,  1.55it/s, succ=93.8%, avgR=7
+
+✅ total_chaos: SR=93.8%, R=7.21±15.78, L=354
+
+======================================================================
+📊 СВОДНАЯ ТАБЛИЦА
+======================================================================
+Режим               SR %     Reward   Length
+---------------------------------------------
+clean              99.0%      9.86      243
+light_dr           96.9%      9.44      343
+sensor_stress      99.0%      6.67      251
+total_chaos        93.8%      7.21      354
+
+💾 Сохранено: results/level_5x5_final_parallel_8env_20260516_174758
+
+
+
+
+
+
+
+
+(miniworld_env) C:\PPO>python evaluate.py --model models/maze_baseline_gray_seed_0/level_5x5_final.zip --config baseline_gray --all-modes --episodes 100
+
+======================================================================
+📦 ПАРАЛЛЕЛЬНАЯ ОЦЕНКА: level_5x5_final.zip
+🗺️  5x5 | envs=8 | eps=100
+======================================================================
+
+============================================================
+📦 level_5x5_final.zip | baseline_gray | clean
+🗺️  5x5 | steps=1150
+🎲 Эпизодов: 96 (12 на 8 env)
+🎯 Deterministic: False | Seed: 0
+============================================================
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+clean: 100%|█| 96/96 [00:51<00:00,  1.87it/s, succ=90.6%, avgR=9.1, le
+
+✅ clean: SR=90.6%, R=9.13±9.64, L=344
+
+============================================================
+📦 level_5x5_final.zip | baseline_gray | light_dr
+🗺️  5x5 | steps=1150
+🎲 Эпизодов: 96 (12 на 8 env)
+🎯 Deterministic: False | Seed: 0
+============================================================
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+Falling back to num_samples=8
+light_dr: 100%|█| 96/96 [01:35<00:00,  1.00it/s, succ=31.2%, avgR=-36.
+
+✅ light_dr: SR=31.2%, R=-36.20±53.96, L=852
+
+============================================================
+📦 level_5x5_final.zip | baseline_gray | sensor_stress
+🗺️  5x5 | steps=1150
+🎲 Эпизодов: 96 (12 на 8 env)
+🎯 Deterministic: False | Seed: 0
+============================================================
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+Falling back to num_samples=8
+Falling back to num_samples=8
+Falling back to num_samples=8
+Falling back to num_samples=8
+Falling back to num_samples=8
+Falling back to num_samples=8
+sensor_stress: 100%|█| 96/96 [01:31<00:00,  1.04it/s, succ=82.3%, avgR
+
+✅ sensor_stress: SR=82.3%, R=1.77±14.66, L=547
+
+============================================================
+📦 level_5x5_final.zip | baseline_gray | total_chaos
+🗺️  5x5 | steps=1150
+🎲 Эпизодов: 96 (12 на 8 env)
+🎯 Deterministic: False | Seed: 0
+============================================================
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+[Factory] Creating: MiniWorld-Maze-v0 with forward_step=0.25, turn_step=22.5, fov=75
+Falling back to num_samples=8
+Falling back to num_samples=8
+total_chaos: 100%|█| 96/96 [01:49<00:00,  1.15s/it, succ=40.6%, avgR=-
+
+✅ total_chaos: SR=40.6%, R=-27.65±36.84, L=770
+
+======================================================================
+📊 СВОДНАЯ ТАБЛИЦА
+======================================================================
+Режим               SR %     Reward   Length
+---------------------------------------------
+clean              90.6%      9.13      344
+light_dr           31.2%    -36.20      852
+sensor_stress      82.3%      1.77      547
+total_chaos        40.6%    -27.65      770
+
+💾 Сохранено: results/level_5x5_final_parallel_8env_20260516_180427
