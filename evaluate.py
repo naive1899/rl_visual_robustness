@@ -242,8 +242,8 @@ def evaluate_all_modes(model_path, train_config, num_episodes=100,
 
     if output_dir is None:
         name = os.path.splitext(os.path.basename(model_path))[0]
-        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_dir = f"results/{name}_parallel_{num_envs}env_{ts}"
+        #ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_dir = f"results/{name}_parallel_{num_envs}env_{train_config}"
     os.makedirs(output_dir, exist_ok=True)
 
     print(f"\n{'='*70}")
