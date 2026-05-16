@@ -418,13 +418,12 @@ def train_curriculum_maze(num_envs, seed, config, save_dir):
         else:
             model.set_env(env)
             # При смене уровня обновляем логгер с правильным путём
-            new_logger = configure(
-                os.path.join(model_dir, "tensorboard"),
-                ["stdout", "tensorboard"]
-            )
+            tb_level_path = os.path.join(model_dir, "tensorboard", f"level_{label}_0")
+            os.makedirs(tb_level_path, exist_ok=True)
+            new_logger = configure(tb_level_path, ["stdout", "tensorboard"])
             model.set_logger(new_logger)
 
-
+        
         checkpoint_dir = os.path.join(model_dir, f"checkpoints_{label}")
         os.makedirs(checkpoint_dir, exist_ok=True)
 
