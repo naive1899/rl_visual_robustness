@@ -123,7 +123,7 @@ light_dr           65.6%     -6.03      593
 sensor_stress      82.3%      3.96      453
 total_chaos        69.8%     -2.23      549
 
-💾 Сохранено: results/level_5x5_final_parallel_8env_20260516_174104
+💾 Сохранено: results/level_5x5_final_parallel_8env_baseline 
 
 
 
@@ -255,7 +255,7 @@ light_dr           96.9%      9.44      343
 sensor_stress      99.0%      6.67      251
 total_chaos        93.8%      7.21      354
 
-💾 Сохранено: results/level_5x5_final_parallel_8env_20260516_174758
+💾 Сохранено: results/level_5x5_final_parallel_8env_progressive_dr
 
 
 
@@ -385,4 +385,4 @@ light_dr           31.2%    -36.20      852
 sensor_stress      82.3%      1.77      547
 total_chaos        40.6%    -27.65      770
 
-💾 Сохранено: results/level_5x5_final_parallel_8env_20260516_180427
+💾 Сохранено: results/level_5x5_final_parallel_8env_baseline_gray
