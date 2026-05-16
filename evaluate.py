@@ -1,16 +1,11 @@
 #!/usr/bin/env python3
 """
 Оценка PPO на MiniWorld Maze с параллельными средами.
-
-ИСПРАВЛЕНИЯ:
-- Убран VecTransposeImage (изображение уже в формате channel-first от MultiModalObservationWrapper)
-- Убрано лишнее копирование observation_space в make_eval_env (SubprocVecEnv сам обрабатывает spaces)
-- Добавлен Monitor wrapper для корректного логирования эпизодов
-- Добавлена обработка случая, когда model_path не существует
 """
 import argparse
 import json
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 0=all, 1=no info, 2=no warnings, 3=no errors
 import re
 from datetime import datetime
 from typing import Optional, Tuple
@@ -35,41 +30,42 @@ from envs.wrappers import (
 
 REWARD_KWARGS = {
     'time_penalty': -0.01,
-    'distance_reward_coef': 0.12,
     'goal_bonus': 10.0,
+    'terminal_penalty': -5.0,
     'use_pbrs': True,
-    'gamma': 1.00,
-    'use_novelty_reward': False,
-    'state_precision': 0.2,
+    'distance_reward_coef': 0.12,
+    'gamma': 1.0,
+    'use_novelty_reward': False,  
+    'state_precision': 0.5,
     'novelty_bonus': 0.0,
     'use_room_reward': False,
-    'room_bonus': 0.3,
+    'room_bonus': 0.0,   
     'forward_bonus': 0.0,
     'spin_penalty': -0.1,
-    'spin_threshold': 6,
+    'spin_threshold': 6,        # 6
     'use_bfs_distance': True,
     'grid_resolution': 0.5,
     'use_stagnation_penalty': True,
     'stagnation_penalty': -0.1,
-    'stagnation_threshold': 2,
+    'stagnation_threshold':  2,   
     'stagnation_precision': 0.4,
-    'wall_collision_penalty': -0.2
+    'wall_collision_penalty':-0.2
 }
+
 
 DILATED_STACK_KWARGS = {'n_stack': 4, 'dilation': 2}
 
-LEVEL_STEPS = {
-    '4x4': 550, '5x4': 750, '4x5': 750,
-    '5x5': 1150, '6x6': 1150,
-}
+LEVEL_STEPS = {'4x4': 550, '4x5': 750, '5x4': 750, '5x5': 1150}
 
 TRAIN_CONFIGS = {
     'baseline': {'perturbation_mode': 'none', 'perturbation_severity': 0.0,
                  'enable_domain_rand': False, 'use_ray_casting': False},
-    'progressive_dr': {'perturbation_mode': 'progressive', 'perturbation_severity': 0.6,
-                       'enable_domain_rand': False, 'use_ray_casting': False},
-    'ray_cast': {'perturbation_mode': 'progressive', 'perturbation_severity': 0.6,
-                 'enable_domain_rand': False, 'use_ray_casting': True},
+    'progressive_dr': {'perturbation_mode': 'progressive', 'perturbation_severity': 0.7,
+                       'enable_domain_rand': True, 'use_ray_casting': False},
+    'baseline_gray': {'perturbation_mode': 'none', 'perturbation_severity': 0.0,
+                 'enable_domain_rand': False, 'use_ray_casting': False},
+    'ray_cast': {'perturbation_mode': 'progressive', 'perturbation_severity': 0.7,
+                 'enable_domain_rand': True, 'use_ray_casting': True},
 }
 
 EVAL_MODES = {
@@ -111,6 +107,10 @@ def make_eval_env(rank, env_name, grid_size, max_episode_steps, eval_mode, train
         env = PerturbationWrapper(env, mode=mp['perturbation_mode'],
                                   severity=mp['perturbation_severity'],
                                   enable_domain_rand=mp['enable_domain_rand'])
+        
+        if train_config in ["baseline_gray", "progressive_dr_gray"]:
+            from envs.grayscale_wrapper import GrayscaleWrapper
+            env = GrayscaleWrapper(env)
 
         env = DilatedFrameStack(env, **DILATED_STACK_KWARGS)
         env = MultiModalObservationWrapper(env)
@@ -168,9 +168,6 @@ def evaluate_parallel(model_path, train_config, eval_mode='clean',
         for i in range(num_envs)
     ]
     env = SubprocVecEnv(env_fns)
-
-    # ❌ УБРАНО: VecTransposeImage — изображение уже (C,H,W) от MultiModalObservationWrapper
-    # env = VecTransposeImage(env)
 
     # Загружаем модель — observation_space совпадёт
     model = PPO.load(model_path, env=env, device=device)
