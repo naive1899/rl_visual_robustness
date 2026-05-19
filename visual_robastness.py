@@ -10,8 +10,12 @@ Visual Robustness Demo — интерактивная демонстрация �
 - Severity регулируется как громкость (+/-), 0-100% (1.0)
 - 8 базовых эпизодов (seed 0-7), затем можно продолжать
 - Success Rate крупно на экране
-- Настраиваемая скорость: шаги в секунду (1-10)
+- PBRS и BFS distance на панели (зелёным)
 - Одно окно pygame: слева first-person view, справа панель статистики
+- Клавиша D — Skip Episode (failure + next seed)
+- Клавиша F — Toggle RGB/Gray отображение (только визуально)
+- Severity: основная клавиатура + numpad +/-
+- Total Chaos: старт 0.5, диапазон ручной регулировки 0.5–1.0
 """
 
 import os
@@ -67,7 +71,7 @@ EVAL_MODES = {
     'clean': {'perturbation_mode': 'none', 'perturbation_severity': 0.0, 'enable_domain_rand': False},
     'light_dr': {'perturbation_mode': 'none', 'perturbation_severity': 0.0, 'enable_domain_rand': True},
     'sensor_stress': {'perturbation_mode': 'fixed', 'perturbation_severity': 0.7, 'enable_domain_rand': False},
-    'total_chaos': {'perturbation_mode': 'naive', 'perturbation_severity': 0.7, 'enable_domain_rand': True},
+    'total_chaos': {'perturbation_mode': 'naive', 'perturbation_severity': 0.5, 'enable_domain_rand': True},
 }
 
 MAZE_OPTIONS = {
@@ -94,6 +98,7 @@ COLOR_BAR_BORDER = (90, 90, 110)
 COLOR_AI = (80, 200, 120)
 COLOR_MANUAL = (230, 180, 60)
 COLOR_FRAME = (60, 60, 80)
+COLOR_PBRS = (100, 255, 100)
 
 
 # ============================================================
@@ -101,19 +106,19 @@ COLOR_FRAME = (60, 60, 80)
 # ============================================================
 
 class VisualRobustnessDemo:
-    def __init__(self, model_path, maze_size, eval_mode, max_episodes=8, steps_per_sec=3, use_gray=False):
+    def __init__(self, model_path, maze_size, eval_mode, max_episodes=8, steps_per_sec=5, use_gray=False):
         self.model_path = model_path
         self.maze_size = maze_size
         self.eval_mode_name = eval_mode
         self.max_episodes = max_episodes
         self.steps_per_sec = steps_per_sec
         self.frame_delay = 1000 // steps_per_sec
-        self.use_gray = use_gray  # Для grayscale моделей
+        self.use_gray = use_gray
 
-        # Создаём среду СНАЧАЛА (до загрузки модели)
+        # Создаём среду
         self._create_env()
 
-        # Загружаем модель с env — критично для Dict observation space!
+        # Загружаем модель с env
         print(f"Loading model: {model_path}")
         self.model = PPO.load(model_path, env=self.env, device='auto')
         print("Model loaded successfully")
@@ -148,6 +153,12 @@ class VisualRobustnessDemo:
         self.frame = None
         self.last_step_time = 0
 
+        # Сохраняем пользовательский severity (чтобы не сбрасывался при reset)
+        self.user_severity = self.base_severity  # None = использовать базовый из режима
+
+        # Визуальный grayscale toggle (только для отображения)
+        self.visual_gray_mode = False
+
         # Статистика
         self.episode_results = []
         self.session_successes = 0
@@ -161,7 +172,6 @@ class VisualRobustnessDemo:
         rows, cols = self.maze_size
         max_steps = LEVEL_STEPS.get(f"{rows}x{cols}", 1150)
 
-        # Базовая среда с render_mode='rgb_array' для получения кадров
         base_env = MiniWorldEnvFactory.create_env(
             env_name='maze',
             max_episode_steps=max_steps,
@@ -170,12 +180,11 @@ class VisualRobustnessDemo:
             num_rows=rows,
             num_cols=cols,
             room_size=4,
-            render_mode='rgb_array',  # КРИТИЧНО: для render()
+            render_mode='rgb_array',
         )
         if hasattr(base_env.unwrapped, 'max_episode_steps'):
             base_env.unwrapped.max_episode_steps = max_steps + 500
 
-        # Сохраняем ссылку на базовый env для рендера
         self.base_env_for_render = base_env
 
         base_env = WallPenaltyWrapper(base_env)
@@ -189,7 +198,6 @@ class VisualRobustnessDemo:
             enable_domain_rand=mp['enable_domain_rand']
         )
 
-        # Grayscale для gray моделей
         if self.use_gray:
             try:
                 from envs.grayscale_wrapper import GrayscaleWrapper
@@ -208,9 +216,20 @@ class VisualRobustnessDemo:
         self.base_severity = mp['perturbation_severity']
         self.can_adjust_severity = self.eval_mode_name in ['sensor_stress', 'total_chaos']
 
+    def _apply_user_severity(self):
+        """Применяет пользовательский severity после reset (чтобы не сбрасывался)."""
+        if self.user_severity is not None and self.perturbation_wrapper is not None:
+            self.perturbation_wrapper.current_severity = self.user_severity
+            if hasattr(self.perturbation_wrapper, 'perturbation_manager'):
+                self.perturbation_wrapper.perturbation_manager.set_severity(self.user_severity)
+
     def _reset_episode(self):
         """Сброс эпизода с текущим seed."""
         self.obs, self.info = self.env.reset(seed=self.current_seed)
+
+        # Восстанавливаем пользовательский severity после reset
+        self._apply_user_severity()
+
         self.episode_step = 0
         self.total_reward = 0.0
         self.frame = None
@@ -218,19 +237,20 @@ class VisualRobustnessDemo:
         print(f"\n🔄 Episode {self.episode_num} started (seed={self.current_seed}, {self.maze_size[0]}×{self.maze_size[1]})")
 
     def _get_first_person_frame(self):
-        """Получает кадр от первого лица через render() с rgb_array."""
+        """Получает кадр от первого лица."""
         try:
             if self.base_env_for_render is not None:
-                # render() с render_mode='rgb_array' возвращает (H, W, 3) numpy array
                 img = self.base_env_for_render.render()
                 if img is not None and isinstance(img, np.ndarray):
-                    # Применяем визуальные помехи если активны
                     if self.perturbation_wrapper is not None:
                         img = self.perturbation_wrapper._apply_perturbation(img)
+                    # Визуальный grayscale toggle (только для отображения)
+                    if self.visual_gray_mode:
+                        gray = np.dot(img[..., :3], [0.299, 0.587, 0.114]).astype(np.uint8)
+                        img = np.stack([gray, gray, gray], axis=-1)
                     return img
         except Exception as e:
             print(f"Render error: {e}")
-
         return np.zeros((64, 64, 3), dtype=np.uint8)
 
     def _draw_progress_bar(self, surface, x, y, width, height, progress, color_fill):
@@ -248,7 +268,6 @@ class VisualRobustnessDemo:
 
         x = 20
         y = 25
-        line_h = 34
 
         # Заголовок
         title = self.font_medium.render("VISUAL ROBUSTNESS", True, COLOR_TEXT)
@@ -319,9 +338,12 @@ class VisualRobustnessDemo:
         panel_surface.blit(grid_text, (x, y))
         y += 26
 
-        # Seed
-        seed_text = self.font_small.render(f"Seed: {self.current_seed}", True, COLOR_TEXT_DIM)
-        panel_surface.blit(seed_text, (x, y))
+        # PBRS + BFS distance — ЗЕЛЁНЫМ
+        pbrs = self.info.get('pbrs_reward', 0.0)
+        bfs_dist = self.info.get('bfs_distance', 0.0)
+        pbrs_text = f"dist={bfs_dist:.1f}" # f"PBRS: {pbrs:+.3f} (dist={bfs_dist:.1f})"
+        pbrs_surface = self.font_small.render(pbrs_text, True, COLOR_PBRS)
+        panel_surface.blit(pbrs_surface, (x, y))
         y += 45
 
         # Разделитель
@@ -339,6 +361,8 @@ class VisualRobustnessDemo:
             "SPACE — Toggle AI / Manual",
             "+ / - — Adjust severity",
             "1-9 — Change speed",
+            "F — Skip Episode (fail)",
+            "G — Toggle RGB / Gray view",
             "R — Reset episode",
             "Q — Quit to menu",
         ]
@@ -359,22 +383,17 @@ class VisualRobustnessDemo:
         """Рисует first-person view слева."""
         frame = self._get_first_person_frame()
 
-        # Масштабируем
         h, w = frame.shape[:2]
         if h == 0 or w == 0:
             frame = np.zeros((64, 64, 3), dtype=np.uint8)
             h, w = 64, 64
 
-        # Pygame surface из numpy array (RGB)
         try:
-            # frame is (H, W, 3), pygame expects (W, H) for surfarray
-            frame_rgb = np.transpose(frame, (1, 0, 2))  # (W, H, 3)
+            frame_rgb = np.transpose(frame, (1, 0, 2))
             frame_surface = pygame.surfarray.make_surface(frame_rgb)
             frame_scaled = pygame.transform.scale(frame_surface, (self.fp_size, self.fp_size))
             self.screen.blit(frame_scaled, (20, 40))
         except Exception as e:
-            # Fallback: manual pixel drawing
-            print(f"Frame display error: {e}")
             surf = pygame.Surface((w, h))
             for y in range(min(h, 64)):
                 for x in range(min(w, 64)):
@@ -385,9 +404,13 @@ class VisualRobustnessDemo:
 
         pygame.draw.rect(self.screen, COLOR_FRAME, (20, 40, self.fp_size, self.fp_size), 4)
 
-        # Подпись
         fp_label = self.font_small.render("First-Person View", True, COLOR_TEXT_DIM)
         self.screen.blit(fp_label, (20, 18))
+
+        # Индикатор визуального grayscale
+        if self.visual_gray_mode:
+            gray_label = self.font_small.render("[GRAY VIEW]", True, COLOR_YELLOW)
+            self.screen.blit(gray_label, (20, self.fp_size + 48))
 
     def _draw_session_complete(self):
         """Рисует экран завершения сессии."""
@@ -399,13 +422,11 @@ class VisualRobustnessDemo:
         x = self.screen_width // 2
         y = self.screen_height // 2 - 160
 
-        # Заголовок
         title = self.font_large.render("SESSION COMPLETE", True, COLOR_TEXT)
         title_rect = title.get_rect(center=(x, y))
         self.screen.blit(title, title_rect)
         y += 90
 
-        # SR
         sr = self._get_current_sr()
         sr_color = COLOR_GREEN if sr >= 80 else (COLOR_YELLOW if sr >= 50 else COLOR_RED)
         sr_text = self.font_large.render(f"{sr:.1f}%", True, sr_color)
@@ -418,7 +439,6 @@ class VisualRobustnessDemo:
         self.screen.blit(sr_label, sr_label_rect)
         y += 60
 
-        # Статистика
         if self.episode_results:
             avg_steps = np.mean([r['steps'] for r in self.episode_results])
             avg_reward = np.mean([r['total_reward'] for r in self.episode_results])
@@ -433,7 +453,6 @@ class VisualRobustnessDemo:
                 y += 28
 
         y += 50
-        # Подсказки
         hint = self.font_small.render("C = Continue  |  M = Menu  |  Q = Quit", True, COLOR_YELLOW)
         hint_rect = hint.get_rect(center=(x, y))
         self.screen.blit(hint, hint_rect)
@@ -460,25 +479,52 @@ class VisualRobustnessDemo:
         print(f"   Reward: {self.total_reward:.2f}")
         print(f"   SR: {self._get_current_sr():.1f}%")
 
-        # Проверяем, не закончились ли базовые эпизоды
         if self.episode_num >= self.max_episodes and not self.in_menu:
             self.in_menu = True
             print(f"\n🏁 Base session complete! SR: {self._get_current_sr():.1f}%")
             return
 
-        # Следующий эпизод
         self.episode_num += 1
         self.current_seed += 1
         self._reset_episode()
 
+    def _skip_episode(self):
+        """Принудительно завершить эпизод как failure и перейти к следующему."""
+        print(f"\n⏭️  Skipping Episode {self.episode_num} (counted as failure)")
+        self._end_episode(success=False)
+
+    def _toggle_visual_gray(self):
+        """Переключить визуальное отображение RGB ↔ Gray."""
+        self.visual_gray_mode = not self.visual_gray_mode
+        mode_str = "GRAY" if self.visual_gray_mode else "RGB"
+        print(f"Visual display: {mode_str}")
+
     def _adjust_severity(self, delta):
-        """Регулирует severity как громкость."""
+        """Регулирует severity как громкость в режимах 3 и 4.
+
+        Сохраняет значение в self.user_severity чтобы не сбрасывалось при reset.
+        Для total_chaos диапазон ограничен 0.5–1.0.
+        """
         if not self.can_adjust_severity or self.perturbation_wrapper is None:
             return
 
-        new_sev = float(np.clip(self.perturbation_wrapper.current_severity + delta, 0.0, 1.0))
+        # Определяем границы в зависимости от режима
+        if self.eval_mode_name == 'total_chaos':
+            low, high = 0.5, 1.0
+        else:
+            low, high = 0.0, 1.0
+
+        # Вычисляем новое значение
+        new_sev = float(np.clip(self.perturbation_wrapper.current_severity + delta, low, high))
+
+        # Сохраняем как пользовательское
+        self.user_severity = new_sev
+
+        # Применяем сразу
         self.perturbation_wrapper.current_severity = new_sev
-        self.perturbation_wrapper.perturbation_manager.set_severity(new_sev)
+        if hasattr(self.perturbation_wrapper, 'perturbation_manager'):
+            self.perturbation_wrapper.perturbation_manager.set_severity(new_sev)
+
         print(f"Severity: {new_sev:.2f} ({int(new_sev*100)}%)")
 
     def _change_speed(self, speed):
@@ -512,10 +558,17 @@ class VisualRobustnessDemo:
                         mode_str = "AI" if self.ai_mode else "MANUAL"
                         print(f"Switched to {mode_str}")
 
-                    elif event.key == K_EQUALS or event.key == K_PLUS:
+                    elif event.key == K_f:
+                        if not self.in_menu:
+                            self._skip_episode()
+
+                    elif event.key == K_g:
+                        self._toggle_visual_gray()
+
+                    elif event.key in (K_EQUALS, K_PLUS, K_KP_PLUS):
                         self._adjust_severity(0.05)
 
-                    elif event.key == K_MINUS:
+                    elif event.key in (K_MINUS, K_KP_MINUS):
                         self._adjust_severity(-0.05)
 
                     elif event.key >= K_1 and event.key <= K_9:
@@ -551,7 +604,7 @@ class VisualRobustnessDemo:
                 action, _ = self.model.predict(self.obs, deterministic=False)
                 action = int(action)
 
-            # Step — только если прошло достаточно времени ИЛИ ручной ввод
+            # Step
             can_step = (current_time - self.last_step_time >= self.frame_delay) or (not self.ai_mode and action is not None)
 
             if action is not None and not self.in_menu and can_step:
@@ -564,7 +617,7 @@ class VisualRobustnessDemo:
                     success = self.info.get('original_reward', 0) > 0.1
                     self._end_episode(success)
 
-            # Отрисовка — всегда плавно
+            # Отрисовка
             self.screen.fill(COLOR_BG)
             self._draw_first_person()
             self._draw_panel()
@@ -628,18 +681,13 @@ def show_menu():
         print("Using GrayscaleWrapper")
     print()
 
-    # Скорость
-    speed = input("Steps per second [3]: ").strip()
-    if not speed or not speed.isdigit():
-        speed = 3
-    else:
-        speed = int(speed)
-    speed = max(1, min(10, speed))
-    print(f"Speed: {speed} steps/sec")
+    # Скорость — теперь 5 по умолчанию, не спрашиваем
+    speed = 5
+    print(f"Speed: {speed} steps/sec (change with 1-9 in demo)")
     print()
 
     # Путь к модели
-    default_model = "models/maze_curriculum_progressive_dr_seed_0/final_model.zip"
+    default_model = "models/maze_progressive_dr_seed_0/level_7x7_final.zip"
     model_path = input(f"Model path [{default_model}]: ").strip()
     if not model_path:
         model_path = default_model
@@ -657,7 +705,7 @@ def main():
     parser.add_argument('--maze', type=str, default=None, choices=list(MAZE_OPTIONS.keys()))
     parser.add_argument('--mode', type=str, default=None, choices=list(EVAL_MODES.keys()))
     parser.add_argument('--episodes', type=int, default=8)
-    parser.add_argument('--speed', type=int, default=3, help='Steps per second (1-10)')
+    parser.add_argument('--speed', type=int, default=5, help='Steps per second (1-10)')
     parser.add_argument('--gray', action='store_true', help='Use grayscale model')
     args = parser.parse_args()
 
@@ -676,13 +724,13 @@ def main():
 
     # Запуск демо
     while True:
-        demo = VisualRobustnessDemo(model_path, maze_size, eval_mode, 
+        demo = VisualRobustnessDemo(model_path, maze_size, eval_mode,
                                      max_episodes=args.episodes, steps_per_sec=speed, use_gray=use_gray)
         result = demo.run()
         demo.close()
 
         if result == 'quit':
-            print("\n👋 Goodbye!")
+            print("\n Goodbye!")
             break
         elif result == 'menu':
             result = show_menu()
@@ -694,4 +742,11 @@ def main():
 if __name__ == '__main__':
     main()
 
-#  python visual_robastness.py
+
+    
+# Запуск:
+# python visual_robastness.py
+# Выбор модели:
+# models/maze_progressive_dr_seed_0/level_6x6_final.zip
+# models/maze_baseline_seed_0/level_6x6_final.zip
+# models/maze_baseline_gray_seed_0/level_6x6_final.zip
